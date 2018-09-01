@@ -1,4 +1,4 @@
-// c++ -lm -o skimNtuple skimNtuple.cpp `root-config --glibs --cflags` -I ../interface/ -lTreePlayer
+// c++ -lm -o skimNtuple skimNtuple.cpp `root-config --glibs --cflags` -I ../interface/ -lTreePlayer --std=c++17
 
 #include "NtupleTrees.h"
 #include "OutputTree.h"
@@ -6,16 +6,95 @@
 #include "TLorentzVector.h"
 #include <iostream>
 #include <cmath>
+#include <array>
+#include <utility>
+#include <tuple>
+#include <algorithm>
+
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
 
 using namespace std;
 
-int main()
+// make H1 and H2 as the pairs with the minimal mass diff between them
+
+std::array<TLorentzVector, 4> pair_jets_minmassdiff (TLorentzVector v1, TLorentzVector v2, TLorentzVector v3, TLorentzVector v4)
+{
+    vector < std::tuple<double, TLorentzVector, TLorentzVector, TLorentzVector, TLorentzVector > > configurations; // mass_diff, jets h1, jets h2
+    TLorentzVector H1;
+    TLorentzVector H2;
+    double mass_diff;
+
+    // 12 34
+    // 13 24
+    // 14 23
+
+    H1 = v1 + v2;
+    H2 = v3 + v4;
+    mass_diff = std::fabs(H1.M() - H2.M());
+    configurations.push_back(make_tuple(mass_diff, v1, v2, v3, v4));
+
+    H1 = v1 + v3;
+    H2 = v2 + v4;
+    mass_diff = std::fabs(H1.M() - H2.M());
+    configurations.push_back(make_tuple(mass_diff, v1, v3, v2, v4));
+
+
+    H1 = v1 + v4;
+    H2 = v2 + v3;
+    mass_diff = std::fabs(H1.M() - H2.M());
+    configurations.push_back(make_tuple(mass_diff, v1, v4, v2, v3));
+
+    // take the one with the smallest mass diff
+    sort(configurations.begin(), configurations.end(), [](
+        const std::tuple<double, TLorentzVector, TLorentzVector, TLorentzVector, TLorentzVector > & a,
+        const std::tuple<double, TLorentzVector, TLorentzVector, TLorentzVector, TLorentzVector > & b) -> bool
+        {
+            return (std::get<0>(a) <  std::get<0>(b));
+        });
+
+    std::array<TLorentzVector, 4> ojets = {
+        std::get<1>(configurations.at(0)),
+        std::get<2>(configurations.at(0)),
+        std::get<3>(configurations.at(0)),
+        std::get<4>(configurations.at(0))
+    };
+ 
+    return ojets;
+}
+
+
+
+int main(int argc, char** argv)
 {
     cout << "... starting skim" << endl;
 
-    string fname = "../filelist/gg_HH_bbbb.txt";
+    // command line options - woudl be better with boost, but use old style input aergs to save hassle of linking boost
+
+
     string tname = string("ntuple");
-    string oname = string("skim_ntuple.root");
+    string fname;
+    string oname;
+    long long int maxEvts = -1;
+
+    // ./skimNtuple inout output [maxEvts]
+    if (argc > 2)
+    {
+        cout << "*** using cmd line values " << endl;
+        fname = argv[1];
+        oname = argv[2];
+        if (argc > 3) maxEvts = std::stoi(argv[3]);
+    }
+
+    else
+    {
+        cout << "*** using default values " << endl;
+        fname = "../filelist/gg_HH_bbbb.txt";
+        oname = string("skim_ntuple_pt20.root");
+    }
+
+    cout << " .. input  name : " << fname << endl;
+    cout << " .. output name : " << oname << endl;
 
     NtupleTrees nt (fname, tname);
 
@@ -25,7 +104,7 @@ int main()
     // *********************************
     // ** parameters of skims
     const int btag_WP = 4; // medium WP with MTD
-    const double min_pt_jet = 50.; // min jet pt . Assume trigger 100% efficiency for this
+    const double min_pt_jet = 20.; // min jet pt . Assume trigger 100% efficiency for this
     const double max_eta_jet = 3.5; // max jet abs eta . Assume trigger 100% efficiency for this
     // *********************************
 
@@ -33,7 +112,6 @@ int main()
     double tot_ev_sum = 0;
     double sel_ev_sum = 0;
 
-    long long int maxEvts = 10000; // -1 for all
     cout << "... running on max " << maxEvts << " events" << endl;
 
     for (long long int iEv = 0; true; ++iEv)
@@ -122,16 +200,32 @@ int main()
             nt.get_JetPUPPI()->Mass.At(ij4)
             );
 
-        // FIXME: pair the jets into H1 and H2
+        // pair the jets into H1 and H2
+        auto ordered_jets = pair_jets_minmassdiff(vj1, vj2, vj3, vj4);
+        vj1 = ordered_jets.at(1 - 1);
+        vj2 = ordered_jets.at(2 - 1);
+        vj3 = ordered_jets.at(3 - 1);
+        vj4 = ordered_jets.at(4 - 1);
 
+        TLorentzVector vH1  = vj1 + vj2;
+        TLorentzVector vH2  = vj3 + vj4;
         TLorentzVector vSum = vj1 + vj2 + vj3 + vj4;
 
         // update efficiency count
         sel_ev_sum += evt_w;
 
         // fill output tree properties
-        // FIXME: fill all
-        ot.HH_mass = vSum.M();
+        ot.H1_pt    = vH1.Pt();
+        ot.H1_eta   = vH1.Eta();
+        ot.H1_mass  = vH1.M();
+        
+        ot.H2_pt    = vH2.Pt();
+        ot.H2_eta   = vH2.Eta();
+        ot.H2_mass  = vH2.M();
+
+        ot.HH_pt    = vSum.Pt();
+        ot.HH_eta   = vSum.Eta();
+        ot.HH_mass  = vSum.M();
 
         ot.n_presel_jets = preselected_jet_idx.size();
 
