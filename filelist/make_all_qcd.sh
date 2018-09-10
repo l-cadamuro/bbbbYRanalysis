@@ -1,0 +1,8 @@
+python make_filelist.py --site desy --out QCD_bEnriched_HT1500to2000.txt  --path /store/group/upgrade/delphes_output/YR_Delphes/Delphes342pre14/QCD_bEnriched_HT1500to2000_TuneCUETP8M1_14TeV-madgraphMLM-pythia8_200PU
+python make_filelist.py --site desy --out QCD_bEnriched_HT2000toInf.txt   --path /store/group/upgrade/delphes_output/YR_Delphes/Delphes342pre14/QCD_bEnriched_HT2000toInf_TuneCUETP8M1_14TeV-madgraphMLM-pythia8_200PU
+python make_filelist.py --site desy --out QCD_bEnriched_HT200to300.txt    --path /store/group/upgrade/delphes_output/YR_Delphes/Delphes342pre14/QCD_bEnriched_HT200to300_TuneCUETP8M1_14TeV-madgraphMLM-pythia8_200PU
+python make_filelist.py --site desy --out QCD_bEnriched_HT300to500.txt    --path /store/group/upgrade/delphes_output/YR_Delphes/Delphes342pre14/QCD_bEnriched_HT300to500_TuneCUETP8M1_14TeV-madgraphMLM-pythia8_200PU
+python make_filelist.py --site desy --out QCD_bEnriched_HT500to700.txt    --path /store/group/upgrade/delphes_output/YR_Delphes/Delphes342pre14/QCD_bEnriched_HT500to700_TuneCUETP8M1_14TeV-madgraphMLM-pythia8_200PU
+##
+python make_filelist.py --site fnal --out QCD_bEnriched_HT1000to1500.txt  --path /store/user/snowmass/noreplica/YR_Delphes/Delphes342pre15/QCD_bEnriched_HT1000to1500_TuneCUETP8M1_14TeV-madgraphMLM-pythia8_200PU
+python make_filelist.py --site fnal --out QCD_bEnriched_HT700to1000.txt   --path /store/user/snowmass/noreplica/YR_Delphes/Delphes342pre15/QCD_bEnriched_HT700to1000_TuneCUETP8M1_14TeV-madgraphMLM-pythia8_200PU
