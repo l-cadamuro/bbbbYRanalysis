@@ -1,6 +1,9 @@
 // c++ -lm -o skimNtuple skimNtuple.cpp `root-config --glibs --cflags` -I ../interface/ -lTreePlayer --std=c++17
-
+// ./skimNtuple ../filelist/gg_HH_bbbb.txt prova.root 0.01233  -1
+//                           ^                 ^       ^       ^
+//                         filelist         oname      xs[pb]  max nev 
 #include "NtupleTrees.h"
+#include "SkimEffCounter.h"
 #include "OutputTree.h"
 #include "TFile.h"
 #include "TLorentzVector.h"
@@ -71,11 +74,11 @@ int main(int argc, char** argv)
 
     // command line options - woudl be better with boost, but use old style input aergs to save hassle of linking boost
 
-
     string tname = string("ntuple");
     string fname;
     string oname;
     long long int maxEvts = -1;
+    double xs = 1.0; // in pb
 
     // ./skimNtuple inout output [maxEvts]
     if (argc > 2)
@@ -83,7 +86,8 @@ int main(int argc, char** argv)
         cout << "*** using cmd line values " << endl;
         fname = argv[1];
         oname = argv[2];
-        if (argc > 3) maxEvts = std::stoi(argv[3]);
+        if (argc > 3) xs = std::stod(argv[3]);
+        if (argc > 4) maxEvts = std::stoi(argv[4]);
     }
 
     else
@@ -95,11 +99,13 @@ int main(int argc, char** argv)
 
     cout << " .. input  name : " << fname << endl;
     cout << " .. output name : " << oname << endl;
+    cout << " .. sigma [pb]  : " << xs << endl;
 
     NtupleTrees nt (fname, tname);
 
     TFile* fOut = new TFile(oname.c_str(), "recreate");
     OutputTree ot("tree", "tree");
+    SkimEffCounter ec;
 
     // *********************************
     // ** parameters of skims
@@ -127,9 +133,13 @@ int main(int argc, char** argv)
         if (iEv % 10000 == 0)
             cout << " >> event " << iEv << endl;
 
-        double evt_w = 1.0; // FIXME: use here gen weights if necessary
-
+        double generator_w = nt.get_Event()->Weight.At(0); // first is the  event weight in Delphes
+        // FIXME: here multiply any other weight that does not modify the total yield (it is mutliplied and summed in the evt_w). Example: HH reweight
+        
+        double evt_w = generator_w;
         tot_ev_sum += evt_w; 
+        ec.updateProcessed(evt_w);
+
 
         const int njets = *(nt.get_JetPUPPI()->JetPUPPI_size);
         // cout << "event has " << njets << " jets" <<endl;
@@ -213,15 +223,38 @@ int main(int argc, char** argv)
 
         // update efficiency count
         sel_ev_sum += evt_w;
+        ec.updateSelected(evt_w);
 
         // fill output tree properties
         ot.H1_pt    = vH1.Pt();
         ot.H1_eta   = vH1.Eta();
+        ot.H1_phi   = vH1.Phi();
         ot.H1_mass  = vH1.M();
         
         ot.H2_pt    = vH2.Pt();
         ot.H2_eta   = vH2.Eta();
+        ot.H2_phi   = vH2.Phi();
         ot.H2_mass  = vH2.M();
+
+        ot.H1_b1_pt   = vj1.Pt();
+        ot.H1_b1_eta  = vj1.Eta();
+        ot.H1_b1_phi  = vj1.Phi();
+        ot.H1_b1_mass = vj1.M();
+
+        ot.H1_b2_pt   = vj2.Pt();
+        ot.H1_b2_eta  = vj2.Eta();
+        ot.H1_b2_phi  = vj2.Phi();
+        ot.H1_b2_mass = vj2.M();
+
+        ot.H2_b1_pt   = vj3.Pt();
+        ot.H2_b1_eta  = vj3.Eta();
+        ot.H2_b1_phi  = vj3.Phi();
+        ot.H2_b1_mass = vj3.M();
+
+        ot.H2_b2_pt   = vj4.Pt();
+        ot.H2_b2_eta  = vj4.Eta();
+        ot.H2_b2_phi  = vj4.Phi();
+        ot.H2_b2_mass = vj4.M();
 
         ot.HH_pt    = vSum.Pt();
         ot.HH_eta   = vSum.Eta();
@@ -229,13 +262,20 @@ int main(int argc, char** argv)
 
         ot.n_presel_jets = preselected_jet_idx.size();
 
+        ot.evt_weight = evt_w;   // tnis gets normalised and accounts for efficiency ==> sum evt_w = 1
+        ot.evt_scale  = xs; // this directly scales the event and increases the event yield
+
         ot.fill();
     }
 
-    double selection_eff = sel_ev_sum/tot_ev_sum;
-    cout << "... selection efficiency is " << selection_eff << endl;
+    double selection_eff    = sel_ev_sum/tot_ev_sum;
+    double selection_eff_xc = ec.getSumWSelected()/ec.getSumWProcessed(); // cross check
+    cout << "... selection efficiency is      " << selection_eff << " (" << selection_eff_xc << ")" << endl;
+    cout << "... fraction of selected evts is " << 1.*ec.getNSelected()/ec.getNProcessed() << endl;
 
     ot.saveToFile(fOut);
+    fOut->cd();
+    ec.write();
 
     cout << "... skim finished, exiting" << endl;
 
