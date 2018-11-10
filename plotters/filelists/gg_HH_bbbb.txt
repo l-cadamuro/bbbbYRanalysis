@@ -1,0 +1,10 @@
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_0.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_1.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_2.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_3.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_4.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_5.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_6.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_7.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_8.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_SM_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_9.root

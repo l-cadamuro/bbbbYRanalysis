@@ -1,0 +1,2 @@
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_kl_6.5_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_0.root
+/eos/cms/store/user/lcadamur/YR_bbbb_trees/gg_HH_bb_kl_6.5_17Ott2018_fullProd_BDTallbkg/bbbbNtuple_1.root
