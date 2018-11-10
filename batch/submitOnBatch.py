@@ -49,15 +49,18 @@ def writeln(f, line):
 ###########
 
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--input',      dest='input',  help='input filelist',   required = True)
-parser.add_argument('--tag',        dest='tag',    help='production tag',   required = True)
-parser.add_argument('--njobs',      dest='njobs',  help='njobs', type=int,  default=500)
+parser.add_argument('--input',      dest='input',  help='input filelist',        required = True)
+parser.add_argument('--tag',        dest='tag',    help='production tag',        required = True)
+parser.add_argument('--xs',         dest='xs',     help='cross section in pb',   required = True)
+parser.add_argument('--kl',         dest='kl',     help='klambda for rew',       default = None)
+parser.add_argument('--njobs',      dest='njobs',  help='njobs', type=int,       default=500)
 ##
 ############################################################
 ## all the following are for "expert" use, not meant to be used by default
 ##
 parser.add_argument('--outputName', dest='oname',  help='the name of the output (if not given, auto from filelist)', default = None)
 parser.add_argument('--outputDir',  dest='odir',   help='the base EOS output directory. Use a {0} for username placeholder, or give it explicitely', default = "/eos/cms/store/user/{0}/YR_bbbb_trees/")
+parser.add_argument('--directWrite' , dest='directwrite',  help='directly write the output on the destination instead of xrdcp after execution', action='store_true', default=False)
 ## if leaving a {0} argument, odir will be formatted with the current username
 ## otherwise a manual fixed path can also be given
 ##
@@ -111,8 +114,10 @@ log_proto = 'job_{0}.log'
 err_proto = 'job_{0}.err'
 
 ## where to store output
+output_tmp_dir_proto = '/pool/lcadamur/skimdir_{0}/' + args.tag ## for the temporary output of the job. Format the out dir with the job nr so that it does not interfere when copying outputs
 outDir                 = args.odir.format(username) + '/' + args.tag
-outFileNameProto       = outDir + '/' + 'bbbbNtuple_{0}.root' ## full LFN
+fname_proto            = 'bbbbNtuple_{0}.root'
+outFileNameProto       = outDir + '/' + fname_proto if args.directwrite else output_tmp_dir_proto + '/' + fname_proto ## full LFN
 
 ## where to fetch input lists from
 inFileListBareProto    = 'filelist_{0}.txt'
@@ -157,7 +162,10 @@ if njobs != len(fileblocks):
 ## now forward all the other commands to full_command
 # full_command += ' ' + ' '.join(unknown)
 
-full_command = executable + ' ' + ('batch/'+inFileListProto) + ' ' + outFileNameProto
+## -1 to run on all events
+full_command = executable + ' ' + ('batch/'+inFileListProto) + ' ' + outFileNameProto + ' ' + args.xs + ' -1'
+if args.kl:
+    full_command += ' HH ' + args.kl
 
 #######
 
@@ -167,6 +175,7 @@ print "** Njobs                 :", njobs
 print "** Working in            :", jobsDir
 print "** Saving output to      :", outDir
 print "** The script will execute :", full_command
+if not args. directwrite: print " ** The tmp folder is : ", output_tmp_dir_proto
 
 if os.path.isdir(jobsDir):
     if not args.force:
@@ -267,7 +276,7 @@ for n in range(0, njobs):
     outScript.write("#!/bin/sh\n")
     outScript.write("echo\n")
     outScript.write("echo\n")
-    outScript.write("export X509_USER_PROXY=%s\n" % myproxyname) ### no need for proxy since I access local files
+    outScript.write("export X509_USER_PROXY=%s\n" % myproxyname)
     outScript.write("echo 'START---------------'\n")
     outScript.write('echo "... start job at" `date "+%Y-%m-%d %H:%M:%S"`\n')
     outScript.write("echo 'WORKDIR ' ${PWD}\n")
@@ -276,9 +285,23 @@ for n in range(0, njobs):
     outScript.write("eval `scramv1 runtime -sh`\n") ## cmsenv
     # outScript.write("cd ..\n")
     outScript.write("pwd\n")
+    if not args.directwrite: ## operate the  copy to outputdir
+        output_tmp_dir = output_tmp_dir_proto.format(n)
+        outScript.write('echo ">> creating the tmp folder in %s"\n' % output_tmp_dir)
+        outScript.write('mkdir -p %s\n' % output_tmp_dir)
+        outScript.write('echo ">> tmp folder created"\n')
     outScript.write('echo "launching the skims ..."\n')
     outScript.write(this_full_command+'\n')
     outScript.write('echo "... job ended with status $?"\n')
+    if not args.directwrite: ## operate the  copy to outputdir
+            xrd_output_dir = outDir
+            if '/eos/cms' in xrd_output_dir:
+                xrd_output_dir = xrd_output_dir.replace('/eos/cms', 'root://eoscms.cern.ch/')
+            outScript.write('xrdcp -s %s/%s %s\n' % (output_tmp_dir, fname_proto.format(n), xrd_output_dir))
+            outScript.write('echo "... xrdcp copy ended with status $?"\n')
+            outScript.write('echo "... cleaning up the tmp space"\n')
+            outScript.write('rm -r %s\n' % output_tmp_dir)
+            outScript.write('echo "... deletion done with status $?"\n')
     outScript.write("echo 'STOP---------------'\n")
     outScript.write('echo "... end job at" `date "+%Y-%m-%d %H:%M:%S"`\n')
     outScript.write("echo\n")
