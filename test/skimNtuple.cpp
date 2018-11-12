@@ -6,6 +6,7 @@
 #include "SkimEffCounter.h"
 #include "OutputTree.h"
 #include "HH_reweight.h"
+#include "HH_reweight_components.h"
 #include "TFile.h"
 #include "TLorentzVector.h"
 #include <iostream>
@@ -126,9 +127,14 @@ int main(int argc, char** argv)
     TFile* fOut = new TFile(oname.c_str(), "recreate");
     OutputTree ot("tree", "tree");
     SkimEffCounter ec;
-    HH_reweight HHrew (
-        "/afs/cern.ch/work/l/lcadamur/private/YR_bbbb_analysis/CMSSW_9_3_2/src/bbbbYRanalysis/data/Coefficients_14TeV.root",
-        "/afs/cern.ch/work/l/lcadamur/private/YR_bbbb_analysis/CMSSW_9_3_2/src/bbbbYRanalysis/data/HH_SM_2D_histo.root"
+    
+    // HH_reweight HHrew (
+    //     "/afs/cern.ch/work/l/lcadamur/private/YR_bbbb_analysis/CMSSW_9_3_2/src/bbbbYRanalysis/data/Coefficients_14TeV.root",
+    //     "/afs/cern.ch/work/l/lcadamur/private/YR_bbbb_analysis/CMSSW_9_3_2/src/bbbbYRanalysis/data/HH_SM_2D_histo.root"
+    // );
+
+    HH_reweight_components HHrew (
+        "/afs/cern.ch/work/l/lcadamur/private/YR_bbbb_analysis/CMSSW_9_3_2/src/bbbbYRanalysis/data/HH_components_histos.root"
     );
 
 
